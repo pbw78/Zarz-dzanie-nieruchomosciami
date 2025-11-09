@@ -1,1 +1,1 @@
-# Zarz-dzanie-nieruchomosciami
+# Zarzadzanie-nieruchomosciami
