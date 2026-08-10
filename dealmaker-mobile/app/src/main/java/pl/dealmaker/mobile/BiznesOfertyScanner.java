@@ -39,7 +39,7 @@ public final class BiznesOfertyScanner {
                             .referrer(BASE + "/sprzedam-biznes/")
                             .timeout(12000).followRedirects(true).maxBodySize(3_000_000).get();
                     int before = r.found;
-                    Elements links = doc.select("a[href*=/o/][href$=.html]");
+                    Elements links = doc.select("a[href*=\"/o/\"][href$=\".html\"]");
                     for (Element a : links) {
                         String href = a.absUrl("href");
                         if (href.isEmpty() || !href.contains("biznesoferty.pl/o/") || !seen.add(href)) continue;
@@ -104,7 +104,7 @@ public final class BiznesOfertyScanner {
         if (box == null) return "";
         for (Element a : box.select("a")) {
             String t = clean(a.text()).toLowerCase(Locale.ROOT);
-            if (t.matches("(dolnośląskie|kujawsko-pomorskie|lubelskie|lubuskie|łódzkie|małopolskie|mazowieckie|opolskie|podkarpackie|podlaskie|pomorskie|śląskie|świętokrzyskie|warmińsko-mazurskie|wielkopolskie|zachodniopomorskie)")) return a.text();
+            if (t.matches("(dolnośląskie|kujawsko-pomorskie|kujawsko-pom\\.|lubelskie|lubuskie|łódzkie|małopolskie|mazowieckie|opolskie|podkarpackie|podlaskie|pomorskie|śląskie|świętokrzyskie|warmińsko-mazurskie|wielkopolskie|zachodniopomorskie)")) return a.text();
         }
         return "";
     }
