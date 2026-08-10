@@ -1,7 +1,7 @@
-name: Build Dealmaker Mobile v2 APK
+name: Build Dealmaker Mobile v3 APK
 on:
   push:
-    branches: [dealmaker-mobile-v2]
+    branches: [dealmaker-mobile-v3]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -9,7 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -37,18 +37,18 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -v 4 "$APK"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$APK"
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | tee apk-badging.txt
-          grep -q "package: name='pl.dealmaker.mobile' versionCode='2' versionName='2.0.0'" apk-badging.txt
+          grep -q "package: name='pl.dealmaker.mobile' versionCode='3' versionName='3.0.0'" apk-badging.txt
           grep -q "sdkVersion:'26'" apk-badging.txt
           grep -q "targetSdkVersion:'36'" apk-badging.txt
       - name: Prepare release artifact
         run: |
-          cp dealmaker-mobile/app/build/outputs/apk/debug/app-debug.apk Dealmaker-Mobile-v2.0.0.apk
-          sha256sum Dealmaker-Mobile-v2.0.0.apk > Dealmaker-Mobile-v2.0.0.sha256.txt
+          cp dealmaker-mobile/app/build/outputs/apk/debug/app-debug.apk Dealmaker-Mobile-v3.0.0.apk
+          sha256sum Dealmaker-Mobile-v3.0.0.apk > Dealmaker-Mobile-v3.0.0.sha256.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: Dealmaker-Mobile-v2.0.0
+          name: Dealmaker-Mobile-v3.0.0
           path: |
-            Dealmaker-Mobile-v2.0.0.apk
-            Dealmaker-Mobile-v2.0.0.sha256.txt
+            Dealmaker-Mobile-v3.0.0.apk
+            Dealmaker-Mobile-v3.0.0.sha256.txt
             apk-badging.txt
           retention-days: 30
