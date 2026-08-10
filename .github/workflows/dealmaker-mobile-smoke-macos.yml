@@ -1,0 +1,55 @@
+name: Dealmaker Mobile macOS runtime smoke
+on:
+  push:
+    branches: [dealmaker-mobile-v3.0.1]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  runtime:
+    runs-on: macos-13
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Build debug APK
+        working-directory: dealmaker-mobile
+        run: gradle --no-daemon assembleDebug
+      - name: Boot emulator and diagnose launch
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          script: |
+            set +e
+            adb logcat -c
+            adb install -r dealmaker-mobile/app/build/outputs/apk/debug/app-debug.apk
+            adb shell am force-stop pl.dealmaker.mobile
+            adb shell am start -n pl.dealmaker.mobile/.SafeMainActivity
+            START_RC=$?
+            sleep 6
+            adb logcat -d -v threadtime > macos-app-logcat.txt
+            PID="$(adb shell pidof pl.dealmaker.mobile | tr -d '\r')"
+            echo "START_RC=$START_RC PID=$PID"
+            grep -n -A 100 -B 20 -E "FATAL EXCEPTION|AndroidRuntime|DealmakerStartup|Process: pl.dealmaker.mobile|pl.dealmaker.mobile" macos-app-logcat.txt | tail -n 600 || true
+            if [ "$START_RC" -ne 0 ] || [ -z "$PID" ]; then exit 1; fi
+            if grep -q -E "FATAL EXCEPTION.*|Process: pl.dealmaker.mobile|DealmakerStartup.*Startup failed" macos-app-logcat.txt; then exit 1; fi
+            adb shell dumpsys activity activities | grep -q "pl.dealmaker.mobile/.SafeMainActivity"
+      - name: Upload macOS runtime log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Dealmaker-Mobile-v3.0.1-macos-runtime-log
+          path: macos-app-logcat.txt
+          if-no-files-found: ignore
+          retention-days: 7
