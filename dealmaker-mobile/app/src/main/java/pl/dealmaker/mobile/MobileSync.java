@@ -13,13 +13,22 @@ public final class MobileSync {
         MobileDb db = new MobileDb(context.getApplicationContext());
         ApiClient api = new ApiClient(baseUrl);
         try {
-            JSONObject response = api.get("/api/leads?limit=5000");
-            JSONArray items = response.optJSONArray("items");
-            if (items != null) r.pulled = db.importServerItems(items);
+            int offset = 0;
+            final int pageSize = 1000;
+            while (true) {
+                JSONObject response = api.get("/api/leads?limit="+pageSize+"&offset="+offset);
+                JSONArray items = response.optJSONArray("items");
+                if (items == null || items.length() == 0) break;
+                r.pulled += db.importServerItems(items);
+                offset += items.length();
+                int total = response.optInt("total", offset);
+                if (items.length() < pageSize || offset >= total) break;
+                if (offset >= 20000) break;
+            }
         } catch (Exception e) { r.errors++; r.lastError = String.valueOf(e.getMessage()); }
 
         try {
-            JSONArray pending = db.unsynced(150);
+            JSONArray pending = db.unsynced(250);
             for (int i=0;i<pending.length();i++) {
                 JSONObject x = pending.optJSONObject(i); if (x==null) continue;
                 try {
@@ -29,6 +38,7 @@ public final class MobileSync {
                     String note=x.optString("description","");
                     String date=x.optString("published_at",""); if(!date.isEmpty()) note += "\nData: "+date;
                     if(x.has("price")) note += "\nCena: "+x.optDouble("price")+" "+x.optString("currency","");
+                    String loc=x.optString("location",""); if(!loc.isEmpty()) body.put("location",loc);
                     body.put("note",note.trim());
                     api.post("/api/mobile/capture",body);
                     db.markSynced(x.optLong("local_id")); r.pushed++;
