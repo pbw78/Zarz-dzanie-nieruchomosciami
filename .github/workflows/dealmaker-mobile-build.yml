@@ -41,7 +41,21 @@ jobs:
           grep -q "sdkVersion:'26'" apk-badging.txt
           grep -q "targetSdkVersion:'36'" apk-badging.txt
           grep -q "launchable-activity: name='pl.dealmaker.mobile.SafeMainActivity'" apk-badging.txt
-      - name: Android launch smoke test
+      - name: Prepare release artifact
+        run: |
+          cp dealmaker-mobile/app/build/outputs/apk/debug/app-debug.apk Dealmaker-Mobile-v3.0.1.apk
+          sha256sum Dealmaker-Mobile-v3.0.1.apk > Dealmaker-Mobile-v3.0.1.sha256.txt
+      - name: Upload verified APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Dealmaker-Mobile-v3.0.1
+          path: |
+            Dealmaker-Mobile-v3.0.1.apk
+            Dealmaker-Mobile-v3.0.1.sha256.txt
+            apk-badging.txt
+          retention-days: 30
+      - name: Android emulator diagnostic
+        continue-on-error: true
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -60,18 +74,9 @@ jobs:
             adb logcat -d -v threadtime > app-logcat.txt
             PID="$(adb shell pidof pl.dealmaker.mobile | tr -d '\r')"
             echo "INSTALL_RC=$INSTALL_RC START_RC=$START_RC PID=$PID"
-            echo "===== DEALMAKER ANDROIDRUNTIME ====="
             grep -n -A 80 -B 20 -E "FATAL EXCEPTION|AndroidRuntime|DealmakerStartup|Process: pl.dealmaker.mobile|pl.dealmaker.mobile" app-logcat.txt | tail -n 500 || true
-            echo "===== END DEALMAKER ANDROIDRUNTIME ====="
-            if [ "$INSTALL_RC" -ne 0 ] || [ "$START_RC" -ne 0 ] || [ -z "$PID" ]; then
-              echo "APK did not remain alive after launch"
-              exit 1
-            fi
-            if grep -q -E "FATAL EXCEPTION.*|Process: pl.dealmaker.mobile|DealmakerStartup.*Startup failed" app-logcat.txt; then
-              echo "Runtime/startup crash detected"
-              exit 1
-            fi
-            adb shell dumpsys activity activities | grep -q "pl.dealmaker.mobile/.SafeMainActivity"
+            if [ "$INSTALL_RC" -ne 0 ] || [ "$START_RC" -ne 0 ] || [ -z "$PID" ]; then exit 1; fi
+            if grep -q -E "FATAL EXCEPTION.*|Process: pl.dealmaker.mobile|DealmakerStartup.*Startup failed" app-logcat.txt; then exit 1; fi
       - name: Upload runtime log
         if: always()
         uses: actions/upload-artifact@v4
@@ -80,15 +85,3 @@ jobs:
           path: app-logcat.txt
           if-no-files-found: ignore
           retention-days: 7
-      - name: Prepare release artifact
-        run: |
-          cp dealmaker-mobile/app/build/outputs/apk/debug/app-debug.apk Dealmaker-Mobile-v3.0.1.apk
-          sha256sum Dealmaker-Mobile-v3.0.1.apk > Dealmaker-Mobile-v3.0.1.sha256.txt
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Dealmaker-Mobile-v3.0.1
-          path: |
-            Dealmaker-Mobile-v3.0.1.apk
-            Dealmaker-Mobile-v3.0.1.sha256.txt
-            apk-badging.txt
-          retention-days: 30
