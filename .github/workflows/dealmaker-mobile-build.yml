@@ -40,6 +40,7 @@ jobs:
           grep -q "package: name='pl.dealmaker.mobile' versionCode='4' versionName='3.0.1'" apk-badging.txt
           grep -q "sdkVersion:'26'" apk-badging.txt
           grep -q "targetSdkVersion:'36'" apk-badging.txt
+          grep -q "launchable-activity: name='pl.dealmaker.mobile.SafeMainActivity'" apk-badging.txt
       - name: Android launch smoke test
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -53,14 +54,14 @@ jobs:
             adb install -r dealmaker-mobile/app/build/outputs/apk/debug/app-debug.apk
             INSTALL_RC=$?
             adb shell am force-stop pl.dealmaker.mobile
-            adb shell am start -n pl.dealmaker.mobile/.MainActivity
+            adb shell am start -n pl.dealmaker.mobile/.SafeMainActivity
             START_RC=$?
             sleep 8
             adb logcat -d -v threadtime > app-logcat.txt
             PID="$(adb shell pidof pl.dealmaker.mobile | tr -d '\r')"
             echo "INSTALL_RC=$INSTALL_RC START_RC=$START_RC PID=$PID"
             echo "===== DEALMAKER ANDROIDRUNTIME ====="
-            grep -n -A 80 -B 20 -E "FATAL EXCEPTION|AndroidRuntime|Process: pl.dealmaker.mobile|pl.dealmaker.mobile" app-logcat.txt | tail -n 500 || true
+            grep -n -A 80 -B 20 -E "FATAL EXCEPTION|AndroidRuntime|DealmakerStartup|Process: pl.dealmaker.mobile|pl.dealmaker.mobile" app-logcat.txt | tail -n 500 || true
             echo "===== END DEALMAKER ANDROIDRUNTIME ====="
             if [ "$INSTALL_RC" -ne 0 ] || [ "$START_RC" -ne 0 ] || [ -z "$PID" ]; then
               echo "APK did not remain alive after launch"
@@ -70,7 +71,7 @@ jobs:
               echo "Runtime crash detected"
               exit 1
             fi
-            adb shell dumpsys activity activities | grep -q "pl.dealmaker.mobile/.MainActivity"
+            adb shell dumpsys activity activities | grep -q "pl.dealmaker.mobile/.SafeMainActivity"
       - name: Upload runtime log
         if: always()
         uses: actions/upload-artifact@v4
