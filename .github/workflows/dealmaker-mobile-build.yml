@@ -31,10 +31,22 @@ jobs:
       - name: Build APK
         working-directory: dealmaker-mobile
         run: gradle --no-daemon assembleDebug
-      - name: Rename APK
-        run: cp dealmaker-mobile/app/build/outputs/apk/debug/app-debug.apk Dealmaker-Mobile-v1.0.0.apk
+      - name: Verify APK signature and manifest
+        run: |
+          APK="dealmaker-mobile/app/build/outputs/apk/debug/app-debug.apk"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | tee apk-badging.txt
+          grep -q "package: name='pl.dealmaker.mobile'" apk-badging.txt
+          grep -q "targetSdkVersion:'36'" apk-badging.txt
+      - name: Prepare release artifact
+        run: |
+          cp dealmaker-mobile/app/build/outputs/apk/debug/app-debug.apk Dealmaker-Mobile-v1.0.0.apk
+          sha256sum Dealmaker-Mobile-v1.0.0.apk > Dealmaker-Mobile-v1.0.0.sha256.txt
       - uses: actions/upload-artifact@v4
         with:
           name: Dealmaker-Mobile-v1.0.0
-          path: Dealmaker-Mobile-v1.0.0.apk
+          path: |
+            Dealmaker-Mobile-v1.0.0.apk
+            Dealmaker-Mobile-v1.0.0.sha256.txt
+            apk-badging.txt
           retention-days: 30
