@@ -53,7 +53,7 @@ public class MainActivity extends Activity {
     private Button button(String s){ Button b=new Button(this);b.setText(s);b.setTextColor(text);b.setTextSize(12);b.setAllCaps(false);b.setBackgroundResource(R.drawable.bg_button);return b; }
     private EditText input(String hint){ EditText e=new EditText(this);e.setHint(hint);e.setHintTextColor(muted);e.setTextColor(text);e.setSingleLine(true);e.setBackgroundColor(card2);e.setPadding(dp(14),dp(12),dp(14),dp(12));return e; }
     private void clear(){ content.removeAllViews(); }
-    private void title(String s,String sub){ TextView t=tv(s,26,text);t.setTypeface(null,1);content.addView(t); if(sub!=null) content.addView(tv(sub,13,muted)); }
+    private void title(String s,String sub){ TextView t=tv(s,26,text);t.setTypeface(null,android.graphics.Typeface.BOLD);content.addView(t); if(sub!=null) content.addView(tv(sub,13,muted)); }
     private LinearLayout cardBox(){ LinearLayout l=new LinearLayout(this);l.setOrientation(LinearLayout.VERTICAL);l.setPadding(dp(10),dp(8),dp(10),dp(8));l.setBackgroundResource(R.drawable.bg_card); LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2);p.setMargins(0,dp(6),0,dp(6));l.setLayoutParams(p);return l; }
     private int dp(int v){ return (int)(v*getResources().getDisplayMetrics().density+.5f); }
 
@@ -90,7 +90,7 @@ public class MainActivity extends Activity {
     }
     private View leadCard(JSONObject x){
         LinearLayout c=cardBox();String leadTitle=x.optString("title","Oferta");double price=x.optDouble("price",Double.NaN);String cur=x.optString("currency","");String loc=x.optString("location","");String src=x.optString("source_name","");int score=x.optInt("score",0);String url=x.optString("source_url","");
-        TextView t=tv(leadTitle,16,text);t.setTypeface(null,1);c.addView(t);String line=(loc.trim().isEmpty()?"":loc+" · ")+(Double.isNaN(price)?"":String.format(Locale.ROOT,"%.0f %s · ",price,cur))+"score "+score+" · "+src;c.addView(tv(line,12,score>=70?accent:muted));String desc=x.optString("description","");if(desc.length()>220)desc=desc.substring(0,220)+"…";c.addView(tv(desc,13,muted));if(!url.trim().isEmpty()){Button o=button("Otwórz źródło");o.setOnClickListener(v->openUrl(url));c.addView(o);}return c;
+        TextView t=tv(leadTitle,16,text);t.setTypeface(null,android.graphics.Typeface.BOLD);c.addView(t);String line=(loc.trim().isEmpty()?"":loc+" · ")+(Double.isNaN(price)?"":String.format(Locale.ROOT,"%.0f %s · ",price,cur))+"score "+score+" · "+src;c.addView(tv(line,12,score>=70?accent:muted));String desc=x.optString("description","");if(desc.length()>220)desc=desc.substring(0,220)+"…";c.addView(tv(desc,13,muted));if(!url.trim().isEmpty()){Button o=button("Otwórz źródło");o.setOnClickListener(v->openUrl(url));c.addView(o);}return c;
     }
 
     private void showScan(){
