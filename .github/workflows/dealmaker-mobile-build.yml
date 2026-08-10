@@ -67,8 +67,8 @@ jobs:
               echo "APK did not remain alive after launch"
               exit 1
             fi
-            if grep -q -E "FATAL EXCEPTION.*|Process: pl.dealmaker.mobile" app-logcat.txt; then
-              echo "Runtime crash detected"
+            if grep -q -E "FATAL EXCEPTION.*|Process: pl.dealmaker.mobile|DealmakerStartup.*Startup failed" app-logcat.txt; then
+              echo "Runtime/startup crash detected"
               exit 1
             fi
             adb shell dumpsys activity activities | grep -q "pl.dealmaker.mobile/.SafeMainActivity"
