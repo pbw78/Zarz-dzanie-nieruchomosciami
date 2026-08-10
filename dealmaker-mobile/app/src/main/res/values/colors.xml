@@ -1,0 +1,10 @@
+<resources>
+    <color name="dm_bg">#0B0E13</color>
+    <color name="dm_card">#141A23</color>
+    <color name="dm_card2">#1A2230</color>
+    <color name="dm_text">#F5F7FA</color>
+    <color name="dm_muted">#9BA7B7</color>
+    <color name="dm_accent">#5BE39A</color>
+    <color name="dm_warn">#F7C65A</color>
+    <color name="dm_bad">#FF6B6B</color>
+</resources>
