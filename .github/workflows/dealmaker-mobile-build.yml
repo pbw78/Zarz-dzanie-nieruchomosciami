@@ -1,0 +1,43 @@
+name: Build Dealmaker Mobile APK
+on:
+  push:
+    branches: [dealmaker-mobile-v1]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unpack Android project
+        run: |
+          mkdir mobile
+          base64 -d dealmaker-mobile-project.zip.b64 > mobile.zip
+          unzip -q mobile.zip -d mobile
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Install Android SDK 36
+        run: yes | sdkmanager "platforms;android-36" "build-tools;35.0.0" >/dev/null
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Unit tests
+        working-directory: mobile
+        run: gradle --no-daemon testDebugUnitTest
+      - name: Lint
+        working-directory: mobile
+        run: gradle --no-daemon lintDebug
+      - name: Build APK
+        working-directory: mobile
+        run: gradle --no-daemon assembleDebug
+      - name: Rename APK
+        run: cp mobile/app/build/outputs/apk/debug/app-debug.apk Dealmaker-Mobile-v1.0.0.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Dealmaker-Mobile-v1.0.0
+          path: Dealmaker-Mobile-v1.0.0.apk
+          retention-days: 30
