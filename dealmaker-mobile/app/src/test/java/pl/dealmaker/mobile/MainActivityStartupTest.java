@@ -7,6 +7,7 @@ import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
+import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 
 import static org.junit.Assert.*;
@@ -18,18 +19,29 @@ public class MainActivityStartupTest {
         Context context = RuntimeEnvironment.getApplication();
         context.getSharedPreferences("dealmaker_mobile", Context.MODE_PRIVATE).edit().clear().commit();
         context.deleteDatabase("dealmaker_mobile.db");
-        MainActivity activity = Robolectric.buildActivity(MainActivity.class).setup().get();
-        assertNotNull(activity);
-        assertFalse(activity.isFinishing());
-        assertNotNull(activity.getWindow().getDecorView());
+        ActivityController<MainActivity> controller = Robolectric.buildActivity(MainActivity.class).setup();
+        try {
+            MainActivity activity = controller.get();
+            assertNotNull(activity);
+            assertFalse(activity.isFinishing());
+            assertNotNull(activity.getWindow().getDecorView());
+        } finally {
+            controller.pause().stop().destroy();
+        }
     }
 
     @Test public void rememberedUnavailableLaptopDoesNotCrashStartup() {
         Context context = RuntimeEnvironment.getApplication();
         SharedPreferences prefs = context.getSharedPreferences("dealmaker_mobile", Context.MODE_PRIVATE);
         prefs.edit().clear().putString("baseUrl", "http://192.168.87.138:8765").commit();
-        MainActivity activity = Robolectric.buildActivity(MainActivity.class).setup().get();
-        assertNotNull(activity);
-        assertFalse(activity.isFinishing());
+        ActivityController<MainActivity> controller = Robolectric.buildActivity(MainActivity.class).setup();
+        try {
+            MainActivity activity = controller.get();
+            assertNotNull(activity);
+            assertFalse(activity.isFinishing());
+            assertNotNull(activity.getWindow().getDecorView());
+        } finally {
+            controller.pause().stop().destroy();
+        }
     }
 }
