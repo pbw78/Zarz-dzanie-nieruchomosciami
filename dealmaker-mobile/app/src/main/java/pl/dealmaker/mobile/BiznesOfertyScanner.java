@@ -42,9 +42,11 @@ public final class BiznesOfertyScanner {
                     Elements links = doc.select("a[href*=\"/o/\"][href$=\".html\"]");
                     for (Element a : links) {
                         String href = a.absUrl("href");
-                        if (href.isEmpty() || !href.contains("biznesoferty.pl/o/") || !seen.add(href)) continue;
+                        if (href.isEmpty() || !href.contains("biznesoferty.pl/o/")) continue;
                         String title = clean(a.text());
+                        if (title.length() < 5) title = clean(a.select("img[alt]").attr("alt"));
                         if (title.length() < 5 || title.equalsIgnoreCase("szczegóły oferty »")) continue;
+                        if (!seen.add(href)) continue;
                         Element box = bestContainer(a);
                         String all = clean(box == null ? a.parent().text() : box.text());
                         String date = first(DATE, all, 1);
