@@ -1,7 +1,7 @@
 name: Build Dealmaker Mobile APK
 on:
   push:
-    branches: [dealmaker-mobile-v1]
+    branches: [dealmaker-mobile-build-1]
   pull_request:
     branches: [main]
   workflow_dispatch:
