@@ -39,12 +39,11 @@ public final class BiznesOfertyScanner {
                             .referrer(BASE + "/sprzedam-biznes/")
                             .timeout(12000).followRedirects(true).maxBodySize(3_000_000).get();
                     int before = r.found;
-                    Elements links = doc.select("a[href*=\"/o/\"][href$=\".html\"]");
+                    Elements links = offerLinks(doc);
                     for (Element a : links) {
                         String href = a.absUrl("href");
                         if (href.isEmpty() || !href.contains("biznesoferty.pl/o/")) continue;
-                        String title = clean(a.text());
-                        if (title.length() < 5) title = clean(a.select("img[alt]").attr("alt"));
+                        String title = titleFor(a);
                         if (title.length() < 5 || title.equalsIgnoreCase("szczegóły oferty »")) continue;
                         if (!seen.add(href)) continue;
                         Element box = bestContainer(a);
@@ -74,9 +73,13 @@ public final class BiznesOfertyScanner {
         return r;
     }
 
-    private static String categoryUrl(String category, int page) {
-        return BASE + "/sprzedam-biznes/" + category + (page <= 1 ? "/" : "," + page + "/");
+    static Elements offerLinks(Document doc) { return doc.select("a[href*=\"/o/\"][href$=\".html\"]"); }
+    static String titleFor(Element a) {
+        String title = clean(a.text());
+        if (title.length() < 5) title = clean(a.select("img[alt]").attr("alt"));
+        return title;
     }
+    static String categoryUrl(String category, int page) { return BASE + "/sprzedam-biznes/" + category + (page <= 1 ? "/" : "," + page + "/"); }
 
     private static Element bestContainer(Element a) {
         Element e = a;
