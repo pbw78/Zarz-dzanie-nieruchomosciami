@@ -1,7 +1,7 @@
-name: Build Dealmaker Mobile v3.1.0 APK
+name: Build Dealmaker Mobile v3.2.0 APK
 on:
   push:
-    branches: [dealmaker-mobile-v3.1]
+    branches: [dealmaker-mobile-v3.2]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -37,20 +37,26 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -v 4 "$APK"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$APK"
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | tee apk-badging.txt
-          grep -q "package: name='pl.dealmaker.mobile' versionCode='5' versionName='3.1.0'" apk-badging.txt
+          grep -q "package: name='pl.dealmaker.mobile' versionCode='6' versionName='3.2.0'" apk-badging.txt
           grep -q "sdkVersion:'26'" apk-badging.txt
           grep -q "targetSdkVersion:'36'" apk-badging.txt
           grep -q "launchable-activity: name='pl.dealmaker.mobile.SafeMainActivity'" apk-badging.txt
+      - name: Inspect source coverage
+        run: |
+          grep -q "logicalProfiles(){ return 68; }" dealmaker-mobile/app/src/main/java/pl/dealmaker/mobile/DailyScanner.java
+          grep -q "SMERGERS" dealmaker-mobile/app/src/main/java/pl/dealmaker/mobile/DailyScanner.java
+          grep -q "Morizon" dealmaker-mobile/app/src/main/java/pl/dealmaker/mobile/DailyScanner.java
+          grep -q "ExcelExporter" dealmaker-mobile/app/src/main/java/pl/dealmaker/mobile/MainActivity.java
       - name: Prepare release artifact
         run: |
-          cp dealmaker-mobile/app/build/outputs/apk/debug/app-debug.apk Dealmaker-Mobile-v3.1.0.apk
-          sha256sum Dealmaker-Mobile-v3.1.0.apk > Dealmaker-Mobile-v3.1.0.sha256.txt
+          cp dealmaker-mobile/app/build/outputs/apk/debug/app-debug.apk Dealmaker-Mobile-v3.2.0.apk
+          sha256sum Dealmaker-Mobile-v3.2.0.apk > Dealmaker-Mobile-v3.2.0.sha256.txt
       - name: Upload verified APK
         uses: actions/upload-artifact@v4
         with:
-          name: Dealmaker-Mobile-v3.1.0
+          name: Dealmaker-Mobile-v3.2.0
           path: |
-            Dealmaker-Mobile-v3.1.0.apk
-            Dealmaker-Mobile-v3.1.0.sha256.txt
+            Dealmaker-Mobile-v3.2.0.apk
+            Dealmaker-Mobile-v3.2.0.sha256.txt
             apk-badging.txt
           retention-days: 30
