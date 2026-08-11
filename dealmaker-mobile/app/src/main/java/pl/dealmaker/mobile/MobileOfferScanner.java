@@ -27,7 +27,7 @@ public final class MobileOfferScanner {
         }
     }
 
-    private static final String UA="Mozilla/5.0 (Linux; Android 16; Mobile) AppleWebKit/537.36 Chrome/140 Mobile Safari/537.36 DealmakerMobile/3.1";
+    private static final String UA="Mozilla/5.0 (Linux; Android 16; Mobile) AppleWebKit/537.36 Chrome/140 Mobile Safari/537.36 DealmakerMobile/3.2";
     private static final Pattern PLN=Pattern.compile("(?<!\\d)(\\d[\\d .]{2,})\\s*(zł|PLN)(?![A-Za-z])",Pattern.CASE_INSENSITIVE);
     private static final Pattern EUR=Pattern.compile("€\\s*([\\d,.]+(?:\\s*[mk])?)|([\\d,.]+(?:\\s*[mk])?)\\s*€",Pattern.CASE_INSENSITIVE);
     private static final Pattern USD=Pattern.compile("\\$\\s*([\\d,.]+(?:\\s*[mk])?)|([\\d,.]+(?:\\s*[mk])?)\\s*\\$",Pattern.CASE_INSENSITIVE);
@@ -36,7 +36,7 @@ public final class MobileOfferScanner {
 
     public static Result scan(Context context,int depth,Progress progress){
         Result all=new Result();
-        int d=Math.max(1,Math.min(depth,3));
+        int d=Math.max(1,Math.min(depth,5));
         int estimated=10*d + 1 + 1 + d + 1;
         BiznesOfertyScanner.Result bo=BiznesOfertyScanner.scanBiznesOnly(context,d,(m,n,p,t)->{
             if(progress!=null)progress.onProgress(m,all.found+n,p,estimated);
