@@ -22,7 +22,18 @@ public final class BiznesOfertyScanner {
 
     private BiznesOfertyScanner() {}
 
+    /** Public entry point used by the UI and background job: scans all lightweight mobile sources. */
     public static Result scan(Context context, int pagesPerCategory, Progress progress) {
+        MobileOfferScanner.Result m = MobileOfferScanner.scan(context, pagesPerCategory,
+                progress == null ? null : (message, found, pagesDone, pagesTotal) -> progress.onProgress(message, found, pagesDone, pagesTotal));
+        Result r = new Result();
+        r.found = m.found; r.saved = m.saved; r.pages = m.pages; r.errors = m.errors;
+        r.lastError = m.summary();
+        return r;
+    }
+
+    /** BiznesOferty-only core called by MobileOfferScanner to avoid recursion. */
+    static Result scanBiznesOnly(Context context, int pagesPerCategory, Progress progress) {
         Result r = new Result();
         MobileDb db = new MobileDb(context.getApplicationContext());
         int pages = Math.max(1, Math.min(pagesPerCategory, 5));
@@ -35,7 +46,7 @@ public final class BiznesOfertyScanner {
                 if (progress != null) progress.onProgress("BiznesOferty · " + category + " · strona " + page, r.found, done, total);
                 try {
                     Document doc = Jsoup.connect(url)
-                            .userAgent("Mozilla/5.0 (Linux; Android 16) AppleWebKit/537.36 Chrome/140 Mobile Safari/537.36 DealmakerMobile/3.0")
+                            .userAgent("Mozilla/5.0 (Linux; Android 16) AppleWebKit/537.36 Chrome/140 Mobile Safari/537.36 DealmakerMobile/3.1")
                             .referrer(BASE + "/sprzedam-biznes/")
                             .timeout(12000).followRedirects(true).maxBodySize(3_000_000).get();
                     int before = r.found;
