@@ -9,11 +9,11 @@ public class MobileScanJobService extends JobService {
     @Override public boolean onStartJob(JobParameters params) {
         pool.submit(() -> {
             try {
-                BiznesOfertyScanner.scan(getApplicationContext(), 1, null);
+                DailyScanner.Result result=DailyScanner.scan(getApplicationContext(),50,null);
                 SharedPreferences p=getSharedPreferences("dealmaker_mobile",MODE_PRIVATE);
                 String base=p.getString("baseUrl","");
                 if(!base.isEmpty()) MobileSync.sync(getApplicationContext(),base);
-                p.edit().putLong("lastMobileScan",System.currentTimeMillis()).apply();
+                p.edit().putLong("lastMobileScan",System.currentTimeMillis()).putInt("lastMobileTarget",50).putInt("lastMobileFound",result.found).putString("lastMobileStatus",result.summary()).apply();
             } finally { jobFinished(params,false); }
         });
         return true;
