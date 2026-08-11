@@ -37,13 +37,11 @@ public final class MobileOfferScanner {
     public static Result scan(Context context,int depth,Progress progress){
         Result all=new Result();
         int d=Math.max(1,Math.min(depth,3));
-        // BiznesOferty is the broadest Polish source, so depth applies there.
         int estimated=10*d + 1 + 1 + d + 1;
-        final int[] baseDone={0};
-        BiznesOfertyScanner.Result bo=BiznesOfertyScanner.scan(context,d,(m,n,p,t)->{
+        BiznesOfertyScanner.Result bo=BiznesOfertyScanner.scanBiznesOnly(context,d,(m,n,p,t)->{
             if(progress!=null)progress.onProgress(m,all.found+n,p,estimated);
         });
-        all.found+=bo.found;all.saved+=bo.saved;all.pages+=bo.pages;all.errors+=bo.errors;baseDone[0]=bo.pages;
+        all.found+=bo.found;all.saved+=bo.saved;all.pages+=bo.pages;all.errors+=bo.errors;
         if(bo.errors<bo.pages){all.sourcesOk++;all.sourceStatus.put("BiznesOferty","OK · "+bo.found+" ofert");}
         else{all.sourcesFailed++;all.sourceStatus.put("BiznesOferty","brak odpowiedzi");}
 
@@ -55,82 +53,24 @@ public final class MobileOfferScanner {
     }
 
     private static void scanSprzedamBiznes(Context c,Result r,Progress p,int total){
-        final String name="SprzedamBiznes";
-        final String url="https://sprzedambiznes.pl/firmy-na-sprzedaz";
-        int before=r.found;
-        try{
-            Document doc=get(url,"https://sprzedambiznes.pl/");
-            LinkedHashMap<String,Element> links=new LinkedHashMap<>();
-            for(Element a:doc.select("a[href*=/firmy-na-sprzedaz/]")){
-                String href=a.absUrl("href");
-                if(href.isEmpty()||href.equals(url)||href.matches(".*/firmy-na-sprzedaz/?$"))continue;
-                Element old=links.get(href);if(old==null||clean(a.text()).length()>clean(old.text()).length())links.put(href,a);
-            }
-            MobileDb db=new MobileDb(c.getApplicationContext());
-            for(Map.Entry<String,Element> e:links.entrySet()){
-                String href=e.getKey();Element a=e.getValue();Element box=container(a,"zł","Przychody:");String txt=clean(box==null?a.text():box.text());
-                String title=headingOrText(a,txt);if(title.length()<6||title.length()>280)continue;
-                Money m=money(txt);String loc=extractLocationPl(txt);String desc=trim(txt,700);
-                db.upsert(href,title,desc,loc,m.value,m.currency,"SprzedamBiznes.pl","",0,"source_listing","mobile_scan",0,false);r.found++;r.saved++;
-            }
-            db.close();r.sourcesOk++;r.sourceStatus.put(name,"OK · "+(r.found-before)+" ofert");
-        }catch(Exception ex){r.errors++;r.sourcesFailed++;r.sourceStatus.put(name,"błąd · "+shortErr(ex));}
-        r.pages++;if(p!=null)p.onProgress(name+" · gotowe",r.found,r.pages,total);
+        final String name="SprzedamBiznes";final String url="https://sprzedambiznes.pl/firmy-na-sprzedaz";int before=r.found;
+        try{Document doc=get(url,"https://sprzedambiznes.pl/");LinkedHashMap<String,Element> links=new LinkedHashMap<>();for(Element a:doc.select("a[href*=/firmy-na-sprzedaz/]")){String href=a.absUrl("href");if(href.isEmpty()||href.equals(url)||href.matches(".*/firmy-na-sprzedaz/?$"))continue;Element old=links.get(href);if(old==null||clean(a.text()).length()>clean(old.text()).length())links.put(href,a);}MobileDb db=new MobileDb(c.getApplicationContext());for(Map.Entry<String,Element> e:links.entrySet()){String href=e.getKey();Element a=e.getValue();Element box=container(a,"zł","Przychody:");String txt=clean(box==null?a.text():box.text());String title=headingOrText(a,txt);if(title.length()<6||title.length()>280)continue;Money m=money(txt);String loc=extractLocationPl(txt);db.upsert(href,title,trim(txt,700),loc,m.value,m.currency,"SprzedamBiznes.pl","",0,"source_listing","mobile_scan",0,false);r.found++;r.saved++;}db.close();r.sourcesOk++;r.sourceStatus.put(name,"OK · "+(r.found-before)+" ofert");}catch(Exception ex){r.errors++;r.sourcesFailed++;r.sourceStatus.put(name,"błąd · "+shortErr(ex));}r.pages++;if(p!=null)p.onProgress(name+" · gotowe",r.found,r.pages,total);
     }
 
     private static void scanBusinessesForSale(Context c,Result r,Progress p,int total){
-        final String name="BusinessesForSale";
-        final String url="https://poland.businessesforsale.com/polish/search/businesses-for-sale";
-        int before=r.found;
-        try{
-            Document doc=get(url,"https://poland.businessesforsale.com/");MobileDb db=new MobileDb(c.getApplicationContext());Set<String>seen=new HashSet<>();
-            for(Element a:doc.select("h2 a[href], h3 a[href]")){
-                String href=a.absUrl("href");String title=clean(a.text());
-                if(href.isEmpty()||!href.contains("businessesforsale.com/")||title.length()<5||!seen.add(href))continue;
-                Element box=container(a,"Asking Price","Revenue:");String txt=clean(box==null?a.parent().text():box.text());
-                if(txt.toLowerCase(Locale.ROOT).contains("franchise")&& !txt.toLowerCase(Locale.ROOT).contains("business"))continue;
-                Money m=money(txt);String loc=afterLabel(txt,"Location:",80);String desc=trim(txt,700);
-                db.upsert(href,title,desc,loc,m.value,m.currency,"BusinessesForSale.com","",0,"source_listing","mobile_scan",0,false);r.found++;r.saved++;
-            }
-            db.close();r.sourcesOk++;r.sourceStatus.put(name,"OK · "+(r.found-before)+" ofert");
-        }catch(Exception ex){r.errors++;r.sourcesFailed++;r.sourceStatus.put(name,"błąd · "+shortErr(ex));}
-        r.pages++;if(p!=null)p.onProgress(name+" · gotowe",r.found,r.pages,total);
+        final String name="BusinessesForSale";final String url="https://poland.businessesforsale.com/polish/search/businesses-for-sale";int before=r.found;
+        try{Document doc=get(url,"https://poland.businessesforsale.com/");MobileDb db=new MobileDb(c.getApplicationContext());Set<String>seen=new HashSet<>();for(Element a:doc.select("h2 a[href], h3 a[href]")){String href=a.absUrl("href");String title=clean(a.text());if(href.isEmpty()||!href.contains("businessesforsale.com/")||title.length()<5||!seen.add(href))continue;Element box=container(a,"Asking Price","Revenue:");String txt=clean(box==null?a.parent().text():box.text());if(txt.toLowerCase(Locale.ROOT).contains("franchise")&&!txt.toLowerCase(Locale.ROOT).contains("business"))continue;Money m=money(txt);String loc=afterLabel(txt,"Location:",80);db.upsert(href,title,trim(txt,700),loc,m.value,m.currency,"BusinessesForSale.com","",0,"source_listing","mobile_scan",0,false);r.found++;r.saved++;}db.close();r.sourcesOk++;r.sourceStatus.put(name,"OK · "+(r.found-before)+" ofert");}catch(Exception ex){r.errors++;r.sourcesFailed++;r.sourceStatus.put(name,"błąd · "+shortErr(ex));}r.pages++;if(p!=null)p.onProgress(name+" · gotowe",r.found,r.pages,total);
     }
 
     private static void scanBusinessInPoland(Context c,int depth,Result r,Progress p,int total){
-        final String name="Business-in-Poland";int before=r.found;Set<String>seen=new HashSet<>();boolean anyOk=false;MobileDb db=new MobileDb(c.getApplicationContext());
-        for(int page=0;page<depth;page++){
-            String url=page==0?"https://www.business-in-poland.eu/en/businesses-for-sale/":"https://www.business-in-poland.eu/en/businesses-for-sale/index/"+(page*12);
-            try{
-                Document doc=get(url,"https://www.business-in-poland.eu/");anyOk=true;
-                for(Element a:doc.select("a[href*=/en/businesses-for-sale/view/]")){
-                    String href=a.absUrl("href");if(href.isEmpty()||!seen.add(href))continue;
-                    Element box=container(a,"City:","Price:");String txt=clean(box==null?a.parent().text():box.text());String title=headingOrText(a,txt);
-                    if(title.equalsIgnoreCase("View")||title.equalsIgnoreCase("View→")||title.length()<5){Element h=box==null?null:box.selectFirst("h1,h2,h3,h4");title=h==null?"":clean(h.text());}
-                    if(title.length()<5)continue;Money m=money(txt);String loc=afterLabel(txt,"City:",45);
-                    db.upsert(href,title,trim(txt,650),loc,m.value,m.currency,"Business-in-Poland.eu","",0,"source_listing","mobile_scan",0,false);r.found++;r.saved++;
-                }
-            }catch(Exception ex){r.errors++;r.sourceStatus.put(name+" p"+(page+1),"błąd · "+shortErr(ex));}
-            r.pages++;if(p!=null)p.onProgress(name+" · strona "+(page+1),r.found,r.pages,total);
-        }
-        db.close();if(anyOk){r.sourcesOk++;r.sourceStatus.put(name,"OK · "+(r.found-before)+" ofert");}else{r.sourcesFailed++;r.sourceStatus.put(name,"brak odpowiedzi");}
+        final String name="Business-in-Poland";int before=r.found;Set<String>seen=new HashSet<>();boolean anyOk=false;MobileDb db=new MobileDb(c.getApplicationContext());for(int page=0;page<depth;page++){String url=page==0?"https://www.business-in-poland.eu/en/businesses-for-sale/":"https://www.business-in-poland.eu/en/businesses-for-sale/index/"+(page*12);try{Document doc=get(url,"https://www.business-in-poland.eu/");anyOk=true;for(Element a:doc.select("a[href*=/en/businesses-for-sale/view/]")){String href=a.absUrl("href");if(href.isEmpty()||!seen.add(href))continue;Element box=container(a,"City:","Price:");String txt=clean(box==null?a.parent().text():box.text());String title=headingOrText(a,txt);if(title.equalsIgnoreCase("View")||title.equalsIgnoreCase("View→")||title.length()<5){Element h=box==null?null:box.selectFirst("h1,h2,h3,h4");title=h==null?"":clean(h.text());}if(title.length()<5)continue;Money m=money(txt);String loc=afterLabel(txt,"City:",45);db.upsert(href,title,trim(txt,650),loc,m.value,m.currency,"Business-in-Poland.eu","",0,"source_listing","mobile_scan",0,false);r.found++;r.saved++;}}catch(Exception ex){r.errors++;r.sourceStatus.put(name+" p"+(page+1),"błąd · "+shortErr(ex));}r.pages++;if(p!=null)p.onProgress(name+" · strona "+(page+1),r.found,r.pages,total);}db.close();if(anyOk){r.sourcesOk++;r.sourceStatus.put(name,"OK · "+(r.found-before)+" ofert");}else{r.sourcesFailed++;r.sourceStatus.put(name,"brak odpowiedzi");}
     }
 
-    /** OLX is intentionally best-effort because its anti-bot layer changes often. */
     private static void scanOlx(Context c,Result r,Progress p,int total){
-        final String name="OLX Firmy";final String url="https://www.olx.pl/dla-firm/sprzedam-firme/q-firma-na-sprzeda%C5%BC/";int before=r.found;
-        try{
-            Document doc=get(url,"https://www.olx.pl/");MobileDb db=new MobileDb(c.getApplicationContext());Set<String>seen=new HashSet<>();
-            Elements as=doc.select("a[href*=/d/oferta/], a[data-cy=listing-ad-title]");
-            for(Element a:as){String href=a.absUrl("href");if(href.isEmpty()||!seen.add(href))continue;Element box=container(a,"zł","Odświeżono");String txt=clean(box==null?a.parent().text():box.text());String title=headingOrText(a,txt);if(title.length()<5)continue;Money m=money(txt);String loc=extractOlxLocation(txt);db.upsert(href,title,trim(txt,650),loc,m.value,m.currency,"OLX · Firmy na sprzedaż","",0,"source_listing","mobile_scan",0,false);r.found++;r.saved++;}
-            db.close();r.sourcesOk++;r.sourceStatus.put(name,"OK · "+(r.found-before)+" ofert");
-        }catch(Exception ex){r.errors++;r.sourcesFailed++;r.sourceStatus.put(name,"pominięty · "+shortErr(ex));}
-        r.pages++;if(p!=null)p.onProgress(name+" · gotowe",r.found,r.pages,total);
+        final String name="OLX Firmy";final String url="https://www.olx.pl/dla-firm/sprzedam-firme/q-firma-na-sprzeda%C5%BC/";int before=r.found;try{Document doc=get(url,"https://www.olx.pl/");MobileDb db=new MobileDb(c.getApplicationContext());Set<String>seen=new HashSet<>();Elements as=doc.select("a[href*=/d/oferta/], a[data-cy=listing-ad-title]");for(Element a:as){String href=a.absUrl("href");if(href.isEmpty()||!seen.add(href))continue;Element box=container(a,"zł","Odświeżono");String txt=clean(box==null?a.parent().text():box.text());String title=headingOrText(a,txt);if(title.length()<5)continue;Money m=money(txt);String loc=extractOlxLocation(txt);db.upsert(href,title,trim(txt,650),loc,m.value,m.currency,"OLX · Firmy na sprzedaż","",0,"source_listing","mobile_scan",0,false);r.found++;r.saved++;}db.close();r.sourcesOk++;r.sourceStatus.put(name,"OK · "+(r.found-before)+" ofert");}catch(Exception ex){r.errors++;r.sourcesFailed++;r.sourceStatus.put(name,"pominięty · "+shortErr(ex));}r.pages++;if(p!=null)p.onProgress(name+" · gotowe",r.found,r.pages,total);
     }
 
-    private static Document get(String url,String ref)throws Exception{
-        return Jsoup.connect(url).userAgent(UA).referrer(ref).timeout(14000).followRedirects(true).maxBodySize(4_000_000).get();
-    }
+    private static Document get(String url,String ref)throws Exception{return Jsoup.connect(url).userAgent(UA).referrer(ref).timeout(14000).followRedirects(true).maxBodySize(4_000_000).get();}
     private static Element container(Element a,String marker1,String marker2){Element e=a;for(int i=0;i<8&&e!=null;i++,e=e.parent()){String t=clean(e.text());if(t.length()>40&&(t.contains(marker1)||t.contains(marker2)))return e;}return a.parent();}
     private static String headingOrText(Element a,String fallback){Element h=a.selectFirst("h1,h2,h3,h4,strong");String t=h==null?clean(a.text()):clean(h.text());if(t.length()<5)t=clean(a.attr("title"));if(t.length()<5)t=fallback;if(t.length()>180)t=t.substring(0,180);return t;}
     private static String extractLocationPl(String s){String[] voiv={"dolnośląskie","kujawsko-pomorskie","lubelskie","lubuskie","łódzkie","małopolskie","mazowieckie","opolskie","podkarpackie","podlaskie","pomorskie","śląskie","świętokrzyskie","warmińsko-mazurskie","wielkopolskie","zachodniopomorskie"};String l=s.toLowerCase(Locale.ROOT);for(String v:voiv)if(l.contains(v))return v;return "";}
